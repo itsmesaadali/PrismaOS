@@ -1,5 +1,4 @@
 #include "../include/random.h"
-#include "../include/time.h"
 
 
 void srand()
