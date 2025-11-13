@@ -237,6 +237,7 @@ int main(void)
 					printk("\n\t date               - \tdisplays current date");
 					printk("\n\t clock              - \tdisplays clock");
 					printk("\n\t history            - \tdisplays commands history");
+					printk("\n\t scheduling         - \tcpu scheduling algorithms");
 					printk("\n\t reboot             - \treboots system");
 					printk("\n\t shutdown           - \tsends shutdown signal");
 					printk("\n");
@@ -280,6 +281,10 @@ int main(void)
 				else if (strlen(buffer) > 0 && strcmp(buffer, "history") == 0)
 				{
 					print_history(head);
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "scheduling") == 0)
+				{
+					fcfs();
 				}
 				else if (strlen(buffer) > 0 && (strstr(buffer, "+") != NULL || strstr(buffer, "-") != NULL || strstr(buffer, "*") != NULL|| strstr(buffer, "/") != NULL ))
 				{
