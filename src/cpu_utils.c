@@ -42,56 +42,6 @@ void print_center(const char *text, int width) {
     for (int i = 0; i < width - len - pad; i++) printk(" ");
 }
 
-// ================= Gantt chart =================
-// void print_gantt_chart(Process proc[], int n) {
-//     char buf[16];
-//     int time = 0;
-
-//     // Top border
-//     printk("  ");
-//     for (int i = 0; i < n; i++) {
-//         for (int j = 0; j < proc[i].burst_time; j++) printk("--");
-//         printk(" ");
-//     }
-
-//     // Bars with process labels
-//     printk("\n|");
-//     for (int i = 0; i < n; i++) {
-//         buf[0] = 'P';
-//         buf[1] = '\0';
-//         char temp[16];
-//         itoas(proc[i].pid, temp);
-//         strcat(buf, temp);
-
-//         int pid_len = strlen(buf);
-//         int padding = proc[i].burst_time * 2 - pid_len;
-//         int left = padding / 2;
-//         int right = padding - left;
-
-//         for (int j = 0; j < left; j++) printk(" "); 
-//         printk("%s", buf);
-//         for (int j = 0; j < right; j++) printk(" ");
-//         printk("|");
-//     }
-
-//     // Bottom border
-//     printk("\n  ");
-//     for (int i = 0; i < n; i++) {
-//         for (int j = 0; j < proc[i].burst_time; j++) printk("--");
-//         printk(" ");
-//     }
-
-//     // Time row
-//     printk("\n0");
-//     time = 0;
-//     for (int i = 0; i < n; i++) {
-//         for (int j = 0; j < proc[i].burst_time; j++) printk("  ");
-//         time += proc[i].burst_time;
-//         printk("%d", time);
-//     }
-//     printk("\n\n");
-// }
-
 
 // ================= Gantt Chart with VGA Colors =================
 void print_gantt_chart_vga(Process proc[], int n) {
@@ -155,4 +105,114 @@ void print_gantt_chart_vga(Process proc[], int n) {
 
     // Reset colors
     terminal_set_colors(COLOR_LIGHT_GREY, COLOR_BLACK);
+}
+
+
+void print_priority_table(Process proc[], int n)
+{
+    char buf[16];
+    int total_wt = 0, total_tt = 0;
+
+    int width_pid = strlen("Process");
+    int width_bt  = strlen("Burst");
+    int width_pr  = strlen("Priority");
+    int width_wt  = strlen("Waiting");
+    int width_tt  = strlen("Turnaround");
+
+    for (int i = 0; i < n; i++)
+    {
+        itoas(proc[i].pid, buf);
+        if (strlen(buf) > width_pid) width_pid = strlen(buf);
+
+        itoas(proc[i].burst_time, buf);
+        if (strlen(buf) > width_bt) width_bt = strlen(buf);
+
+        itoas(proc[i].priority, buf);
+        if (strlen(buf) > width_pr) width_pr = strlen(buf);
+
+        itoas(proc[i].waiting_time, buf);
+        if (strlen(buf) > width_wt) width_wt = strlen(buf);
+
+        itoas(proc[i].turnaround_time, buf);
+        if (strlen(buf) > width_tt) width_tt = strlen(buf);
+    }
+
+    // --------- Print top border ---------
+    printk("+");
+    for (int i = 0; i < width_pid; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_bt; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_pr; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_wt; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_tt; i++) printk("-");
+    printk("+\n");
+
+    // --------- Header ---------
+    printk("|"); print_center("Process", width_pid);
+    printk("|"); print_center("Burst", width_bt);
+    printk("|"); print_center("Priority", width_pr);
+    printk("|"); print_center("Waiting", width_wt);
+    printk("|"); print_center("Turnaround", width_tt);
+    printk("|\n");
+
+    // --------- Separator ---------
+    printk("+");
+    for (int i = 0; i < width_pid; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_bt; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_pr; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_wt; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_tt; i++) printk("-");
+    printk("+\n");
+
+    // --------- Rows ---------
+    for (int i = 0; i < n; i++)
+    {
+        printk("|");
+        itoas(proc[i].pid, buf); print_center(buf, width_pid);
+
+        printk("|");
+        itoas(proc[i].burst_time, buf); print_center(buf, width_bt);
+
+        printk("|");
+        itoas(proc[i].priority, buf); print_center(buf, width_pr);
+
+        printk("|");
+        itoas(proc[i].waiting_time, buf); print_center(buf, width_wt);
+
+        printk("|");
+        itoas(proc[i].turnaround_time, buf); print_center(buf, width_tt);
+        printk("|\n");
+
+        total_wt += proc[i].waiting_time;
+        total_tt += proc[i].turnaround_time;
+    }
+
+    // --------- Bottom border ---------
+    printk("+");
+    for (int i = 0; i < width_pid; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_bt; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_pr; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_wt; i++) printk("-");
+    printk("+");
+    for (int i = 0; i < width_tt; i++) printk("-");
+    printk("+\n");
+
+    // --------- Averages ---------
+    printk("Average Waiting Time   : ");
+    print_float((float)total_wt / n);
+
+    printk("\nAverage Turnaround Time: ");
+    print_float((float)total_tt / n);
+
+    printk("\n");
 }

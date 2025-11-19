@@ -284,33 +284,43 @@ int main(void)
 				}
 				else if (strlen(buffer) > 0 && strcmp(buffer, "scheduling") == 0)
 				{
-					int choice = 0;
-					while (true)
-					{
-						printk("\nCPU Scheduling Algorithms Menu:\n");
-						printk("1. First-Come-First-Served (FCFS)\n");
-						printk("2. Shortest Job First (SJF)\n");
-						printk("3. Back to main menu\n");
-						printk("Enter your choice (1-3): ");
-						choice = read_int();
+					printk("\n\n\tCPU Scheduling Algorithms:\n");
 
-						if (choice == 1)
-						{
-							fcfs();
-						}
-						else if (choice == 2)
-						{
-							sjf();
-						}
-						else if (choice == 3)
-						{
-							break;
-						}
-						else
-						{
-							printk("Invalid choice! Please enter 1, 2, or 3.\n");
-						}
-					}
+					printk("\n\t Non-Preemptive Algorithms:\n");
+					printk("\n\t   fcfs                 - \tFirst-Come-First-Served");
+					printk("\n\t   sjf                  - \tShortest Job First");
+					printk("\n\t   priority_np          - \tNon-preemptive Priority Scheduling");
+
+					printk("\n\n\t Preemptive Algorithms:\n");
+					printk("\n\t   srtf                 - \tShortest Remaining Time First");
+					printk("\n\t   priority_p           - \tPreemptive Priority Scheduling");
+					printk("\n\t   rr                   - \tRound Robin");
+
+					printk("\n");
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "fcfs") == 0)
+				{
+					fcfs();
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "sjf") == 0)
+				{
+					sjf();
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "priority_np") == 0)
+				{
+					priority_non_preemptive();
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "srtf") == 0)
+				{
+					srtf();
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "priority_p") == 0)
+				{
+					priority_preemptive();
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "rr") == 0)
+				{
+					round_robin();
 				}
 
 				else if (strlen(buffer) > 0 && (strstr(buffer, "+") != NULL || strstr(buffer, "-") != NULL || strstr(buffer, "*") != NULL || strstr(buffer, "/") != NULL))
