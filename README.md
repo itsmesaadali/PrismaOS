@@ -53,4 +53,4 @@ cd CoreOS
 
 ### GitHub Profiles:
 
-`0X1Saad`, `itsmesaadali`, `Ghazanfar Pasha`, `Roshaan Idrees`
+`0X1Saad`, `itsmesaadali`, `Ghazanfar Pasha`, `Muhammad Roshaan Idrees`
