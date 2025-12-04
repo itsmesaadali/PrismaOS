@@ -53,7 +53,7 @@ cd PrismaOS
 
 ### GitHub Profiles:
 
-`0X1Saad`, `itsmesaadali`, `Ghazanfar Pasha`, `Muhammad Roshaan Idrees`
+`0X1Saad`, `itsmesaadali`, `Ghazanfar Pasha`, `Muhammad-Roshaan-Idrees`
 
 ## Running in QEMU (scaled text mode)
 
