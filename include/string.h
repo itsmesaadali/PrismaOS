@@ -34,7 +34,6 @@ char *strchr(const char *s, int c);
 int strncmp(const char *s1, const char *s2, size_t n);
 char *toupper(char *string);
 char *tolower(char *string);
-static char *sitoa(char *buf, unsigned int num, int width, enum flag_itoa flags);
 void itoa(char *str, int num, int base);
 int vsprintf(char *buf, const char *fmt, va_list va);
 int sprintf(char *buf, const char *fmt, ...);

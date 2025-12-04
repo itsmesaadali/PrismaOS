@@ -35,9 +35,11 @@ uint8_t input_bytes(uint16_t port);
 void output_bytes(uint16_t port, uint8_t val);
 uint8_t inw(uint16_t port);
 void outw(uint16_t port, uint16_t data);
+void kbd_flush(void);
 uint8_t scan(void);
 void move_cursor(int row, int col);
 void move_cursor2(char c, enum vga_color char_color);
 void print_prompt(void);
+void enable_hardware_cursor(unsigned char start, unsigned char end);
 
 #endif

@@ -9,6 +9,7 @@ size_t terminal_column;
 static uint16_t *const VGA_MEMORY = (uint16_t *)0xb8000;
 uint8_t terminal_color;
 uint16_t *terminal_buffer;
+static font_scale_t current_font_scale = FONT_SIZE_NORMAL;
 
 #define BUFFER_SIZE 1024
 
@@ -40,20 +41,23 @@ void terminal_initialize(enum vga_color font_color, enum vga_color background_co
             terminal_buffer[index] = make_vgaentry(' ', terminal_color);
         }
     }
+    move_cursor(0, 0);
+    enable_hardware_cursor(0x00, 0x0F); // show full-size blinking cursor
 }
 
 void terminal_scroll()
 {
-    int i;
-    for (i = 0; i < VGA_HEIGHT; i++)
+    int y, x;
+    for (y = 0; y < (int)VGA_HEIGHT - 1; y++)
     {
-        int m;
-        for (m = 0; m < VGA_WIDTH; m++)
+        for (x = 0; x < (int)VGA_WIDTH; x++)
         {
-            terminal_buffer[i * VGA_WIDTH + m] = terminal_buffer[(i + 1) * VGA_WIDTH + m];
+            terminal_buffer[y * VGA_WIDTH + x] = terminal_buffer[(y + 1) * VGA_WIDTH + x];
         }
-        terminal_row--;
     }
+    // clear last line
+    for (x = 0; x < (int)VGA_WIDTH; x++)
+        terminal_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + x] = make_vgaentry(' ', terminal_color);
     terminal_row = VGA_HEIGHT - 1;
 }
 
@@ -69,30 +73,38 @@ void terminal_putchar(char c)
     {
         terminal_column = 0;
         terminal_row++;
-        if (terminal_row == VGA_HEIGHT)
+        if (terminal_row >= VGA_HEIGHT)
             terminal_scroll();
-        return;
     }
     else if (c == '\t')
     {
         terminal_column += 4;
-        return;
+        if (terminal_column >= VGA_WIDTH)
+        {
+            terminal_column = 0;
+            terminal_row++;
+            if (terminal_row >= VGA_HEIGHT)
+                terminal_scroll();
+        }
     }
     else if (c == '\b')
     {
-        terminal_putentryat(' ', terminal_color, terminal_column--, terminal_row);
+        if (terminal_column > 0) terminal_column--;
         terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
-        return;
     }
-    terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-    if (++terminal_column == VGA_WIDTH)
+    else
     {
-        terminal_column = 0;
-        if (++terminal_row == VGA_HEIGHT)
+        terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
+        terminal_column++;
+        if (terminal_column >= VGA_WIDTH)
         {
-            terminal_row = 0;
+            terminal_column = 0;
+            terminal_row++;
+            if (terminal_row >= VGA_HEIGHT)
+                terminal_scroll();
         }
     }
+    move_cursor(get_terminal_row(), get_terminal_col());
 }
 
 void terminal_write(const char *data, size_t size)
@@ -100,6 +112,7 @@ void terminal_write(const char *data, size_t size)
     size_t i;
     for (i = 0; i < size; i++)
         terminal_putchar(data[i]);
+    move_cursor(get_terminal_row(), get_terminal_col());
 }
 
 int putchar(int ic)
@@ -111,43 +124,25 @@ int putchar(int ic)
 
 void term_putc(char c, enum vga_color char_color)
 {
-    unsigned int i = 0; // place holder for text string position
-    unsigned int j = 0; // place holder for video buffer position
-
-    int index;
-    // Remember - we don't want to display ALL characters!
-    switch (c)
-    {
-    case '\n': // Newline characters should return the column to 0, and increment the row
-    {
-        terminal_column = 0;
-        terminal_row += 2;
-        break;
-    }
-
-    default: // Normal characters just get displayed and then increment the column
-    {
-        index = (VGA_WIDTH * terminal_row) + terminal_column; // Like before, calculate the buffer index
-        VGA_MEMORY[index] = c;
-        VGA_MEMORY[index + 1] = char_color;
-        // terminal_column += 2;
-        break;
-    }
-    }
-
-    // What happens if we get past the last column? We need to reset the column to 0, and increment the row to get to a new line
-    if (terminal_column >= VGA_WIDTH)
+    uint8_t color = make_color(char_color, (terminal_color >> 4));
+    if (c == '\n' || c == '\r')
     {
         terminal_column = 0;
         terminal_row++;
+        if (terminal_row >= VGA_HEIGHT) terminal_scroll();
     }
-
-    // What happens if we get past the last row? We need to reset both column and row to 0 in order to loop back to the top of the screen
-    if (terminal_row >= VGA_WIDTH)
+    else
     {
-        terminal_column = 0;
-        terminal_row = 0;
+        terminal_putentryat(c, color, terminal_column, terminal_row);
+        terminal_column++;
+        if (terminal_column >= VGA_WIDTH)
+        {
+            terminal_column = 0;
+            terminal_row++;
+            if (terminal_row >= VGA_HEIGHT) terminal_scroll();
+        }
     }
+    move_cursor(get_terminal_row(), get_terminal_col());
 }
 
 // This function prints an entire string onto the screen
@@ -550,5 +545,69 @@ enum vga_color change_font_color()
             }
             move_cursor(get_terminal_row(), get_terminal_col());
         }
+    }
+}
+
+// Set VGA font height by programming the Maximum Scan Line register
+static void set_vga_font_height(uint8_t scan_lines)
+{
+    // Select Maximum Scan Line register (index 0x09) in CRTC
+    output_bytes(0x3D4, 0x09);
+    
+    // Read current value
+    uint8_t val = input_bytes(0x3D5);
+    
+    // Clear lower 5 bits and set new scan line value (scan_lines - 1)
+    val = (val & 0xE0) | ((scan_lines - 1) & 0x1F);
+    
+    // Write back
+    output_bytes(0x3D5, val);
+}
+
+// Get current font scale
+font_scale_t get_font_scale(void)
+{
+    return current_font_scale;
+}
+
+// Increase font size (make text appear larger)
+void increase_font_size(void)
+{
+    if (current_font_scale == FONT_SIZE_SMALL)
+    {
+        current_font_scale = FONT_SIZE_NORMAL;
+        set_vga_font_height(14); // Normal: 8x14 font
+        printk("\nFont size: Normal\n");
+    }
+    else if (current_font_scale == FONT_SIZE_NORMAL)
+    {
+        current_font_scale = FONT_SIZE_LARGE;
+        set_vga_font_height(8); // Large: 8x8 font (fewer scan lines = bigger chars)
+        printk("\nFont size: Large\n");
+    }
+    else
+    {
+        printk("\nFont size already at maximum (Large)\n");
+    }
+}
+
+// Decrease font size (make text appear smaller)
+void decrease_font_size(void)
+{
+    if (current_font_scale == FONT_SIZE_LARGE)
+    {
+        current_font_scale = FONT_SIZE_NORMAL;
+        set_vga_font_height(14); // Normal: 8x14 font
+        printk("\nFont size: Normal\n");
+    }
+    else if (current_font_scale == FONT_SIZE_NORMAL)
+    {
+        current_font_scale = FONT_SIZE_SMALL;
+        set_vga_font_height(16); // Small: 8x16 font (more scan lines = smaller chars)
+        printk("\nFont size: Small\n");
+    }
+    else
+    {
+        printk("\nFont size already at minimum (Small)\n");
     }
 }

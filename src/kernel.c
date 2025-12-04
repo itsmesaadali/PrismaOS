@@ -29,22 +29,32 @@ char current_version[7];
 
 int main(void)
 {
-	char buffer[BUFFER_SIZE];
+	char buffer[BUFFER_SIZE] = {0};
 	char *string;
 	char *buff;
 	uint8_t byte;
 	node_t *head = NULL;
 
 	terminal_initialize(default_font_color, COLOR_BLACK);
-	terminal_set_colors(COLOR_LIGHT_GREEN, COLOR_BLACK);
+	
+	// Print logo in cyan
+	terminal_set_colors(COLOR_LIGHT_CYAN, COLOR_BLACK);
 	sprintf(current_version, "%u.%u.%u", V1, V2, V3 + 1);
 	print_logo();
+	
+	// Print about info in light grey
+	terminal_set_colors(COLOR_LIGHT_GREY, COLOR_BLACK);
 	about(current_version);
-	printk("\n\tType \"help\" for a list of commands.\n\n");
-	// printf("\tCurrent datetime: ");
-	// datetime();
-	printk("\n\tWelcome!\n\n");
+	
+	// Print help hint in yellow
+	terminal_set_colors(COLOR_LIGHT_BROWN, COLOR_BLACK);
+	printk("Type \"help\" for a list of commands.\n\n");
+	
+	// Print welcome in green
+	terminal_set_colors(COLOR_LIGHT_GREEN, COLOR_BLACK);
+	printk("Welcome!\n\n");
 
+	// Reset to default color
 	terminal_set_colors(default_font_color, COLOR_BLACK);
 
 	// initialize heap
@@ -74,7 +84,6 @@ int main(void)
 	kfree(c);
 #endif
 
-	strcpy(&buffer[strlen(buffer)], "");
 	print_prompt();
 	while (true)
 	{
@@ -227,19 +236,22 @@ int main(void)
 				}
 				else if (strlen(buffer) > 0 && strcmp(buffer, "help") == 0)
 				{
-					printk("\n\n\tBasic kernel commands:\n");
-					printk("\n\t about              - \tabout PrimusOS");
-					printk("\n\t math               - \tlists all mathematical functions");
-					printk("\n\t crypto             - \tlists all cryptography utilities");
-					printk("\n\t clear              - \tclears the screen");
-					printk("\n\t fontcolor          - \tchange default font color");
-					printk("\n\t datetime           - \tdisplays current date and time");
-					printk("\n\t date               - \tdisplays current date");
-					printk("\n\t clock              - \tdisplays clock");
-					printk("\n\t history            - \tdisplays commands history");
-					printk("\n\t scheduling         - \tcpu scheduling algorithms");
-					printk("\n\t reboot             - \treboots system");
-					printk("\n\t shutdown           - \tsends shutdown signal");
+					printk("\n\nBasic kernel commands:\n");
+					printk("\n about              - about PrimusOS");
+					printk("\n math               - lists all mathematical functions");
+					printk("\n crypto             - lists all cryptography utilities");
+					printk("\n clear              - clears the screen");
+					printk("\n fontcolor          - change default font color");
+					printk("\n fontsize+          - increase font size");
+					printk("\n fontsize-          - decrease font size");
+					printk("\n memory             - memory management commands");
+					printk("\n datetime           - displays current date and time");
+					printk("\n date               - displays current date");
+					printk("\n clock              - displays clock");
+					printk("\n history            - displays commands history");
+					printk("\n scheduling         - cpu scheduling algorithms");
+					printk("\n reboot             - reboots system");
+					printk("\n shutdown           - sends shutdown signal");
 					printk("\n");
 				}
 				else if (strlen(buffer) > 0 && strcmp(buffer, "about") == 0)
@@ -250,6 +262,19 @@ int main(void)
 				{
 					default_font_color = change_font_color();
 				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "fontsize+") == 0)
+				{
+					increase_font_size();
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "fontsize-") == 0)
+				{
+					decrease_font_size();
+				}
+				else if (strlen(buffer) > 0 && strcmp(buffer, "memory") == 0)
+				{
+					memory_menu();
+				}
+				
 				else if (strlen(buffer) > 0 && strcmp(buffer, "clear") == 0)
 				{
 					terminal_initialize(default_font_color, COLOR_BLACK);
@@ -284,13 +309,12 @@ int main(void)
 				}
 				else if (strlen(buffer) > 0 && strcmp(buffer, "scheduling") == 0)
 				{
-					printk("\n\n\tCPU Scheduling Algorithms:\n");
+					printk("\n\tCPU Scheduling Algorithms:\n");
 
 					printk("\n\t Non-Preemptive Algorithms:\n");
 					printk("\n\t   fcfs                 - \tFirst-Come-First-Served");
 					printk("\n\t   sjf                  - \tShortest Job First");
 					printk("\n\t   priority_np          - \tNon-preemptive Priority Scheduling");
-
 					printk("\n\n\t Preemptive Algorithms:\n");
 					printk("\n\t   srtf                 - \tShortest Remaining Time First");
 					printk("\n\t   priority_p           - \tPreemptive Priority Scheduling");
@@ -336,7 +360,6 @@ int main(void)
 				}
 				print_prompt();
 				memset(buffer, 0, BUFFER_SIZE);
-				strcpy(&buffer[strlen(buffer)], "");
 				break;
 			}
 			else if ((byte == BACKSPACE) && (strlen(buffer) == 0))

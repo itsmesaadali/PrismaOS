@@ -134,7 +134,7 @@ void fcfs()
     Process proc[MAX_PROCESSES];
     int n;
 
-    printk("Enter number of processes: ");
+    printk("\nEnter number of processes: ");
     n = read_int();
     if (n <= 0 || n > MAX_PROCESSES)
     {

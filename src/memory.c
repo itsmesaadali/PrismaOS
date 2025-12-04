@@ -2,6 +2,11 @@
 #include "../include/string.h"
 #include "../include/tty.h"
 
+// ADD THESE LINES
+struct heap kernel_heap;
+struct heap_table kernel_heap_table;
+
+
 void memcpy(void *dest, void *src, size_t n)
 {
     // Typecast src and dest addresses to (char *)
@@ -93,7 +98,7 @@ static uint32_t heap_align_value_to_upper(uint32_t val)
     return val;
 }
 
-static int heap_get_entry_type(HEAP_BLOCK_TABLE_ENTRY entry)
+int heap_get_entry_type(HEAP_BLOCK_TABLE_ENTRY entry)
 {
     return entry & 0x0f;
 }

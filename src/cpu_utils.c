@@ -1,59 +1,92 @@
 #include "../include/tty.h"
 #include "../include/string.h"
 #include "cpu_utils.h"
-#include "../include/utils.h" // for printk()
+#include "../include/utils.h"
 
-// ================= Float printing =================
+// ======================= FLOAT PRINTING =======================
 void print_float(float val) {
     int int_part = (int)val;
     float frac = val - (float)int_part;
+
     if (frac < 0) frac = -frac;
+
     int decimal = (int)(frac * 100);
 
     char buf[32], tmp[16];
     strcpy(buf, "");
+
+    // integer part
     itoas(int_part, tmp);
     strcat(buf, tmp);
+
+    // decimal part
     strcat(buf, ".");
     if (decimal < 10) strcat(buf, "0");
     itoas(decimal, tmp);
     strcat(buf, tmp);
+
     printk("%s", buf);
 }
 
-// ================= Integer to string =================
+// ======================= INTEGER TO STRING =======================
 void itoas(int num, char *str) {
     int i = 0, is_neg = 0;
-    if (num == 0) { str[i++] = '0'; str[i] = '\0'; return; }
-    if (num < 0) { is_neg = 1; num = -num; }
-    char temp[10]; int j = 0;
-    while (num != 0) { temp[j++] = (num % 10) + '0'; num /= 10; }
+
+    if (num == 0) {
+        str[i++] = '0';
+        str[i] = '\0';
+        return;
+    }
+
+    if (num < 0) {
+        is_neg = 1;
+        num = -num;
+    }
+
+    char temp[10];
+    int j = 0;
+
+    while (num != 0) {
+        temp[j++] = (num % 10) + '0';
+        num /= 10;
+    }
+
     if (is_neg) str[i++] = '-';
-    while (j > 0) str[i++] = temp[--j];
+
+    while (j > 0)
+        str[i++] = temp[--j];
+
     str[i] = '\0';
 }
 
-// ================= Center text =================
+// ======================= FIXED COLOR PER PROCESS =======================
+int get_process_color(int pid) {
+    int colors[] = {
+        COLOR_RED, COLOR_GREEN, COLOR_BLUE,
+        COLOR_CYAN, COLOR_MAGENTA, COLOR_BROWN,
+        COLOR_LIGHT_RED, COLOR_LIGHT_GREEN
+    };
+    return colors[(pid - 1) % 8];
+}
+
+// ======================= CENTER ALIGN TEXT =======================
 void print_center(const char *text, int width) {
     int len = strlen(text);
     int pad = (width - len) / 2;
+
     for (int i = 0; i < pad; i++) printk(" ");
     printk("%s", text);
     for (int i = 0; i < width - len - pad; i++) printk(" ");
 }
 
-
-// ================= Gantt Chart with VGA Colors =================
+// ======================= GANTT CHART (ALL ALGORITHMS) =======================
 void print_gantt_chart_vga(Process proc[], int n) {
     int time = 0;
-    int unit_width = 2; // Width per time unit
-    int colors[] = {
-        COLOR_RED, COLOR_GREEN, COLOR_LIGHT_BLUE, 
-        COLOR_BLUE, COLOR_MAGENTA, COLOR_CYAN
-    };
+    int unit_width = 2; // Width per time unit (adjustable)
 
-    // ---------- Top border ----------
     terminal_set_colors(COLOR_LIGHT_GREY, COLOR_BLACK);
+
+    // ---------- Top Border ----------
     printk("  ");
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < proc[i].burst_time * unit_width; j++)
@@ -61,31 +94,36 @@ void print_gantt_chart_vga(Process proc[], int n) {
         printk(" ");
     }
 
-    // ---------- Process row ----------
+    // ---------- Process Blocks ----------
     printk("\n|");
     for (int i = 0; i < n; i++) {
-        int pid_len = 2; // P1, P2 etc.
-        int total_width = proc[i].burst_time * unit_width;
-        int left_pad = (total_width - pid_len) / 2;
-        int right_pad = total_width - pid_len - left_pad;
 
-        // Print left padding
+        int pid_len = 2;  // P1, P2, etc.
+        int width = proc[i].burst_time * unit_width;
+        int left = (width - pid_len) / 2;
+        int right = width - pid_len - left;
+
+        // Left padding
         terminal_set_colors(COLOR_LIGHT_GREY, COLOR_BLACK);
-        for (int j = 0; j < left_pad; j++) printk(" ");
+        for (int j = 0; j < left; j++)
+            printk(" ");
 
-        // Set process color and print process label
-        terminal_set_colors(COLOR_BLACK, colors[i % 6]); // font black, background colored
+        // Colored block (same color for same PID)
+        terminal_set_colors(COLOR_BLACK, get_process_color(proc[i].pid));
+
         char buf[4];
         itoas(proc[i].pid, buf);
         printk("P%s", buf);
 
-        // Print right padding
-        for (int j = 0; j < right_pad; j++) printk(" ");
+        // Right padding
+        for (int j = 0; j < right; j++)
+            printk(" ");
+
         terminal_set_colors(COLOR_LIGHT_GREY, COLOR_BLACK);
         printk("|");
     }
 
-    // ---------- Bottom border ----------
+    // ---------- Bottom Border ----------
     printk("\n  ");
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < proc[i].burst_time * unit_width; j++)
@@ -93,23 +131,25 @@ void print_gantt_chart_vga(Process proc[], int n) {
         printk(" ");
     }
 
-    // ---------- Time row ----------
+    // ---------- Time Markers ----------
     printk("\n0");
     time = 0;
+
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < proc[i].burst_time * unit_width; j++) printk(" ");
+        for (int j = 0; j < proc[i].burst_time * unit_width; j++)
+            printk(" ");
+
         time += proc[i].burst_time;
         printk("%d", time);
     }
+
     printk("\n\n");
 
-    // Reset colors
     terminal_set_colors(COLOR_LIGHT_GREY, COLOR_BLACK);
 }
 
-
-void print_priority_table(Process proc[], int n)
-{
+// ======================= PRIORITY TABLE =======================
+void print_priority_table(Process proc[], int n) {
     char buf[16];
     int total_wt = 0, total_tt = 0;
 
@@ -119,8 +159,8 @@ void print_priority_table(Process proc[], int n)
     int width_wt  = strlen("Waiting");
     int width_tt  = strlen("Turnaround");
 
-    for (int i = 0; i < n; i++)
-    {
+    // Calculate dynamic column widths
+    for (int i = 0; i < n; i++) {
         itoas(proc[i].pid, buf);
         if (strlen(buf) > width_pid) width_pid = strlen(buf);
 
@@ -137,7 +177,7 @@ void print_priority_table(Process proc[], int n)
         if (strlen(buf) > width_tt) width_tt = strlen(buf);
     }
 
-    // --------- Print top border ---------
+    // --------- Top Border ---------
     printk("+");
     for (int i = 0; i < width_pid; i++) printk("-");
     printk("+");
@@ -150,7 +190,7 @@ void print_priority_table(Process proc[], int n)
     for (int i = 0; i < width_tt; i++) printk("-");
     printk("+\n");
 
-    // --------- Header ---------
+    // --------- Headers ---------
     printk("|"); print_center("Process", width_pid);
     printk("|"); print_center("Burst", width_bt);
     printk("|"); print_center("Priority", width_pr);
@@ -158,7 +198,7 @@ void print_priority_table(Process proc[], int n)
     printk("|"); print_center("Turnaround", width_tt);
     printk("|\n");
 
-    // --------- Separator ---------
+    // --------- Mid Border ---------
     printk("+");
     for (int i = 0; i < width_pid; i++) printk("-");
     printk("+");
@@ -171,30 +211,20 @@ void print_priority_table(Process proc[], int n)
     for (int i = 0; i < width_tt; i++) printk("-");
     printk("+\n");
 
-    // --------- Rows ---------
-    for (int i = 0; i < n; i++)
-    {
-        printk("|");
-        itoas(proc[i].pid, buf); print_center(buf, width_pid);
-
-        printk("|");
-        itoas(proc[i].burst_time, buf); print_center(buf, width_bt);
-
-        printk("|");
-        itoas(proc[i].priority, buf); print_center(buf, width_pr);
-
-        printk("|");
-        itoas(proc[i].waiting_time, buf); print_center(buf, width_wt);
-
-        printk("|");
-        itoas(proc[i].turnaround_time, buf); print_center(buf, width_tt);
+    // --------- Table Rows ---------
+    for (int i = 0; i < n; i++) {
+        printk("|"); itoas(proc[i].pid, buf); print_center(buf, width_pid);
+        printk("|"); itoas(proc[i].burst_time, buf); print_center(buf, width_bt);
+        printk("|"); itoas(proc[i].priority, buf); print_center(buf, width_pr);
+        printk("|"); itoas(proc[i].waiting_time, buf); print_center(buf, width_wt);
+        printk("|"); itoas(proc[i].turnaround_time, buf); print_center(buf, width_tt);
         printk("|\n");
 
         total_wt += proc[i].waiting_time;
         total_tt += proc[i].turnaround_time;
     }
 
-    // --------- Bottom border ---------
+    // --------- Bottom Border ---------
     printk("+");
     for (int i = 0; i < width_pid; i++) printk("-");
     printk("+");

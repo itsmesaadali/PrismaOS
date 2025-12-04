@@ -89,7 +89,7 @@ void round_robin()
     int n;
     int quantum;
 
-    printk("Enter number of processes: ");
+    printk("\nEnter number of processes: ");
     n = read_int();
     if (n <= 0 || n > MAX_PROCESSES) { printk("Invalid number of processes!\n"); return; }
 

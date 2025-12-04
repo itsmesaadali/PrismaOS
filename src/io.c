@@ -60,6 +60,21 @@ void outw(uint16_t port, uint16_t data)
                          : "a"(data), "d"(port));
 }
 
+void kbd_flush(void)
+{
+    uint8_t temp;
+    int timeout = 1000;
+    
+    while (timeout-- > 0)
+    {
+        temp = input_bytes(KBRD_INTRFC);
+        if (check_flag(temp, KBRD_BIT_KDATA) != 0)
+            input_bytes(KBRD_IO);
+        else
+            break;
+    }
+}
+
 uint8_t scan(void)
 {
     unsigned char brk;
@@ -90,8 +105,23 @@ void move_cursor(int row, int col)
     output_bytes(FB_DATA_PORT, (unsigned char)((pos >> 8) & 0xFF));
 }
 
+void enable_hardware_cursor(unsigned char start, unsigned char end)
+{
+    /* Cursor start register = 0x0A, cursor end register = 0x0B on CRT controller */
+    uint8_t prev;
+    output_bytes(FB_COMMAND_PORT, 0x0A);
+    prev = input_bytes(FB_DATA_PORT);
+    output_bytes(FB_DATA_PORT, (prev & 0xC0) | (start & 0x1F));
+    output_bytes(FB_COMMAND_PORT, 0x0B);
+    prev = input_bytes(FB_DATA_PORT);
+    output_bytes(FB_DATA_PORT, (prev & 0xE0) | (end & 0x1F));
+}
+
 void print_prompt(void)
 {
-    printk("\n$ > ");
+    // Print prompt in bright green for better visibility
+    terminal_set_colors(COLOR_LIGHT_GREEN, COLOR_BLACK);
+    printk("$ > ");
+    terminal_set_colors(COLOR_LIGHT_GREY, COLOR_BLACK);
     move_cursor(get_terminal_row(), get_terminal_col());
 }

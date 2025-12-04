@@ -3,5 +3,6 @@
 
 void print_logo();
 void about(char *version);
+int read_int();
 
 #endif

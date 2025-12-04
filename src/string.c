@@ -66,6 +66,16 @@ char *strcpy(char *dest, const char *src)
     return tmp;
 }
 
+char *strncpy(char *dest, const char *src, size_t n)
+{
+    char *tmp = dest;
+    while (n && (*dest++ = *src++) != 0)
+        n--;
+    while (n--)
+        *dest++ = '\0';
+    return tmp;
+}
+
 int strcmp(const char *s1, const char *s2)
 {
     while (*s1 && (*s1 == *s2))

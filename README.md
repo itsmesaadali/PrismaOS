@@ -54,3 +54,18 @@ cd CoreOS
 ### GitHub Profiles:
 
 `0X1Saad`, `itsmesaadali`, `Ghazanfar Pasha`, `Muhammad Roshaan Idrees`
+
+## Running in QEMU (scaled text mode)
+
+To run the built ISO in a window that scales the VGA text display (keeps text crisp and left-aligned), use the bundled script:
+
+```bash
+./run_qemu.sh
+```
+
+Notes:
+- The script uses SDL display with window controls (minimize, maximize, close buttons).
+- Sets `SDL_RENDER_SCALE_QUALITY=nearest` so when you resize the window, VGA text scales with nearest-neighbor (no blur).
+- You can toggle fullscreen in QEMU (SDL) with `Ctrl+Alt+F` (host/window-manager dependent).
+- The UI includes color-coded text: cyan logo, grey info, yellow hints, green prompt.
+- If you prefer true fullscreen at start, run `qemu-system-x86_64 ... -display sdl -full-screen` (some environments require X11/SDL support).
