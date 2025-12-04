@@ -1,4 +1,4 @@
-bits 32                 ; Assemble in 32-bit mode for protected mode kernel
+bits 32                  ; Assemble in 32-bit mode for protected mode kernel
 global _start            ; Export the _start symbol for linker
 extern kernel_early      ; Declare external function kernel_early
 extern main              ; Declare external function main
