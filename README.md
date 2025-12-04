@@ -42,13 +42,13 @@
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/Teams-Workspace/CoreOS.git
-cd CoreOS
+git clone https://github.com/Teams-Workspace/PrismaOS.git
+cd PrismaOS
 ```
 
 ### Contributors
 
-- **Saad Ali – Ghazanfar Pasha - Roshaan Idrees**
+- **Saad Ali – Ghazanfar Pasha - Muhammad Roshaan Idrees**
 
 
 ### GitHub Profiles:
